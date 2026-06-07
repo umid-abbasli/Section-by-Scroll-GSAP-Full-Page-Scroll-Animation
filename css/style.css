@@ -171,6 +171,39 @@ body[data-theme="accent"] .nav-dot {
   transform: scale(1.3);
 }
 
+/* Site credit */
+.site-credit {
+  position: fixed;
+  bottom: 2rem;
+  left: 2.5rem;
+  z-index: 100;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-light);
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.site-credit a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: opacity 0.3s, border-color 0.3s;
+}
+
+.site-credit a:hover {
+  opacity: 1;
+  border-color: currentColor;
+}
+
+body[data-theme="light"] .site-credit,
+body[data-theme="accent"] .site-credit {
+  color: var(--text-dark);
+}
+
 /* Scroll hint */
 .scroll-hint {
   position: fixed;
@@ -564,6 +597,12 @@ body.is-animating .cta-btn {
 @media (max-width: 768px) {
   .site-header {
     padding: 1rem 1.5rem;
+  }
+
+  .site-credit {
+    left: 1.5rem;
+    bottom: 1.5rem;
+    font-size: 0.7rem;
   }
 
   .github-link span {
