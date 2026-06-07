@@ -67,9 +67,13 @@ function getSectionTargets(section) {
     titleLines: section.querySelectorAll(".title .line, .quote-line"),
     desc: section.querySelector(".desc"),
     stats: section.querySelectorAll(".stat-num"),
+    statCards: section.querySelectorAll(".stat-card"),
+    tags: section.querySelectorAll(".discover-tag"),
+    barFills: section.querySelectorAll(".stat-bar-fill"),
     features: section.querySelectorAll(".feature-item"),
     cta: section.querySelector(".cta-btn"),
     orbs: section.querySelectorAll(".orb"),
+    decor: section.querySelectorAll(".discover-accent, .discover-ring"),
     content: section.querySelector(".section-content"),
   };
 }
@@ -82,8 +86,12 @@ function resetSection(section) {
   if (t.titleLines.length) gsap.set(t.titleLines, { y: 60, autoAlpha: 0, ...hidden });
   if (t.desc) gsap.set(t.desc, { y: 30, autoAlpha: 0, ...hidden });
   if (t.features.length) gsap.set(t.features, { x: 40, autoAlpha: 0, ...hidden });
+  if (t.statCards.length) gsap.set(t.statCards, { y: 30, autoAlpha: 0, ...hidden });
+  if (t.tags.length) gsap.set(t.tags, { y: 16, autoAlpha: 0, ...hidden });
+  if (t.barFills.length) gsap.set(t.barFills, { scaleX: 0, transformOrigin: "left center", ...hidden });
   if (t.cta) gsap.set(t.cta, { y: 30, autoAlpha: 0, scale: 0.95, ...hidden });
   if (t.orbs.length) gsap.set(t.orbs, { autoAlpha: 0, ...hidden });
+  if (t.decor.length) gsap.set(t.decor, { scale: 0.85, autoAlpha: 0, ...hidden });
   if (t.content && !t.titleLines.length) gsap.set(t.content, { y: 40, autoAlpha: 0, ...hidden });
 
   t.stats.forEach((stat) => {
@@ -123,6 +131,10 @@ function animateSectionIn(section, tl, startAt = 0.18) {
     tl.to(t.orbs, { autoAlpha: 1, duration: 0.9, stagger: 0.06, ...opts }, startAt);
   }
 
+  if (t.decor.length) {
+    tl.to(t.decor, { scale: 1, autoAlpha: 1, duration: 0.9, stagger: 0.08, ...opts }, startAt);
+  }
+
   if (t.eyebrow) {
     tl.to(t.eyebrow, { y: 0, autoAlpha: 1, duration: 0.65, ...opts }, startAt + 0.05);
   }
@@ -139,13 +151,35 @@ function animateSectionIn(section, tl, startAt = 0.18) {
     tl.to(t.desc, { y: 0, autoAlpha: 1, duration: 0.6, ...opts }, startAt + 0.28);
   }
 
+  if (t.tags.length) {
+    tl.to(t.tags, { y: 0, autoAlpha: 1, duration: 0.5, stagger: 0.06, ...opts }, startAt + 0.32);
+  }
+
+  if (t.statCards.length) {
+    tl.to(t.statCards, { y: 0, autoAlpha: 1, duration: 0.65, stagger: 0.12, ...opts }, startAt + 0.2);
+  }
+
   t.stats.forEach((stat, i) => {
     const target = parseInt(stat.dataset.count, 10);
-    const offset = startAt + 0.22 + i * 0.04;
+    const offset = startAt + 0.28 + i * 0.1;
 
     tl.to(stat, { autoAlpha: 1, duration: 0.35, ...opts }, offset);
     animateCounter(stat, target, tl, offset + 0.05);
   });
+
+  if (t.barFills.length) {
+    tl.to(
+      t.barFills,
+      {
+        scaleX: 1,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: EASE_CONTENT_IN,
+        ...TWEEN_DEFAULTS,
+      },
+      startAt + 0.45
+    );
+  }
 
   if (t.features.length) {
     tl.to(
@@ -172,9 +206,12 @@ function animateSectionOut(section, tl, direction = 1, startAt = 0) {
     t.eyebrow,
     ...t.titleLines,
     t.desc,
+    ...t.statCards,
+    ...t.tags,
     ...t.features,
     t.cta,
     ...t.orbs,
+    ...t.decor,
     ...(t.content && !t.titleLines.length ? [t.content] : []),
   ].filter(Boolean);
 
