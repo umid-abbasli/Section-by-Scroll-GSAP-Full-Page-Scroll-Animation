@@ -2,10 +2,15 @@
 
 > **Free & open-source animation on scroll template.** One scroll event, one section — buttery-smooth full-page transitions powered by GSAP.
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-000?style=flat-square&logo=vercel&logoColor=white)](https://section-by-scroll-gsap-full-page-sc.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/umid-abbasli/Section-by-Scroll-GSAP-Full-Page-Scroll-Animation)
 [![GSAP](https://img.shields.io/badge/GSAP-3.12-88CE02?style=flat-square&logo=greensock&logoColor=white)](https://gsap.com/)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![120fps Ready](https://img.shields.io/badge/Performance-120fps%20Ready-ff4d6d?style=flat-square)]()
+
+**Live Demo:** [section-by-scroll-gsap-full-page-sc.vercel.app](https://section-by-scroll-gsap-full-page-sc.vercel.app/)  
+**GitHub Repo:** [github.com/umid-abbasli/Section-by-Scroll-GSAP-Full-Page-Scroll-Animation](https://github.com/umid-abbasli/Section-by-Scroll-GSAP-Full-Page-Scroll-Animation)
 
 ---
 
@@ -37,6 +42,7 @@ Perfect for:
 | **Section nav dots** | Click to jump directly to any section. |
 | **Reduced motion** | Respects `prefers-reduced-motion` — falls back to native scroll. |
 | **Zero framework** | Plain HTML, CSS, and JavaScript. Drop into any project. |
+| **Next.js & Nuxt ready** | Integration guides below for React and Vue ecosystems. |
 
 ---
 
@@ -44,8 +50,8 @@ Perfect for:
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/section-by-scroll.git
-cd section-by-scroll
+git clone https://github.com/umid-abbasli/Section-by-Scroll-GSAP-Full-Page-Scroll-Animation.git
+cd Section-by-Scroll-GSAP-Full-Page-Scroll-Animation
 
 # Serve locally (any static server works)
 npx serve .
@@ -60,12 +66,13 @@ No build step. No npm install required.
 ## Project Structure
 
 ```
-section-by-scroll/
+Section-by-Scroll-GSAP-Full-Page-Scroll-Animation/
 ├── index.html          # 5 demo sections + SEO meta tags
 ├── css/
 │   └── style.css       # Layout, themes, GPU layer hints
 ├── js/
 │   └── main.js         # GSAP Observer, transitions, easing
+├── LICENSE
 └── README.md
 ```
 
@@ -99,6 +106,316 @@ gsap.to(track, {
 ```
 
 Content enter/exit animations run in the same timeline, synced with the scroll motion.
+
+---
+
+## Next.js Integration Guide
+
+Use this template inside a **Next.js App Router** project with a client component and `@gsap/react` for safe cleanup.
+
+### 1. Install dependencies
+
+```bash
+npm install gsap @gsap/react
+```
+
+### 2. Copy assets
+
+Copy `css/style.css` into your project:
+
+```
+your-next-app/
+├── app/
+│   └── scroll-demo/
+│       └── page.tsx
+├── components/
+│   └── SectionByScroll.tsx
+└── styles/
+    └── section-scroll.css   ← copy from css/style.css
+```
+
+### 3. Create the component
+
+`components/SectionByScroll.tsx`:
+
+```tsx
+"use client";
+
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Observer } from "gsap/Observer";
+import { CustomEase } from "gsap/CustomEase";
+import "@/styles/section-scroll.css";
+
+gsap.registerPlugin(Observer, CustomEase, useGSAP);
+
+const EASE_SCROLL = CustomEase.create("sectionScroll", "M0,0 C0.62,0 0.18,1 1,1");
+const EASE_CONTENT_IN = CustomEase.create("contentIn", "M0,0 C0.55,0 0.22,1 1,1");
+const EASE_CONTENT_OUT = CustomEase.create("contentOut", "M0,0 C0.7,0 0.35,0.6 1,1");
+
+export default function SectionByScroll({ children }: { children: React.ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      gsap.config({ force3D: true });
+      gsap.ticker.lagSmoothing(0);
+
+      const track = rootRef.current?.querySelector(".scroll-track");
+      const sections = gsap.utils.toArray<HTMLElement>(".section", rootRef.current);
+      if (!track || !sections.length) return;
+
+      let currentIndex = 0;
+      let isAnimating = false;
+      let activeTimeline: gsap.core.Timeline | null = null;
+
+      const getTrackYPercent = (index: number) => -(index * 100) / sections.length;
+
+      const goToSection = (index: number) => {
+        index = gsap.utils.clamp(0, sections.length - 1, index);
+        if (index === currentIndex || isAnimating) return;
+
+        isAnimating = true;
+        currentIndex = index;
+        activeTimeline?.kill();
+
+        activeTimeline = gsap.timeline({
+          onComplete: () => {
+            isAnimating = false;
+            activeTimeline = null;
+          },
+        });
+
+        activeTimeline.to(track, {
+          yPercent: getTrackYPercent(index),
+          duration: 1.15,
+          ease: EASE_SCROLL,
+          force3D: true,
+        });
+      };
+
+      const observer = Observer.create({
+        target: window,
+        type: "wheel,touch,pointer",
+        tolerance: 10,
+        preventDefault: true,
+        onDown: () => goToSection(currentIndex + 1),
+        onUp: () => goToSection(currentIndex - 1),
+      });
+
+      return () => observer.kill();
+    },
+    { scope: rootRef }
+  );
+
+  return <div ref={rootRef}>{children}</div>;
+}
+```
+
+### 4. Use in a page
+
+`app/scroll-demo/page.tsx`:
+
+```tsx
+import SectionByScroll from "@/components/SectionByScroll";
+
+export const metadata = {
+  title: "Section by Scroll Animation | Next.js + GSAP",
+  description: "Full-page scroll animation on scroll with GSAP Observer in Next.js.",
+};
+
+export default function ScrollDemoPage() {
+  return (
+    <SectionByScroll>
+      <main className="scroll-stage">
+        <div className="scroll-pin">
+          <div className="scroll-track">
+            <section className="section section--hero" data-theme="dark">
+              <div className="section-content">
+                <h1 className="title">Your first section</h1>
+              </div>
+            </section>
+            <section className="section section--discover" data-theme="light">
+              <div className="section-content">
+                <h2 className="title">Your second section</h2>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </SectionByScroll>
+  );
+}
+```
+
+### Next.js tips
+
+- Always use `"use client"` — GSAP touches the DOM and must run client-side only.
+- Wrap logic in `useGSAP()` so tweens and Observer are cleaned up on unmount.
+- Load Google Fonts in `app/layout.tsx` or use `next/font/google` for Roboto + Inter.
+- For full animation logic (content in/out, nav dots), copy functions from `js/main.js` into the component.
+- Do **not** import GSAP in Server Components.
+
+---
+
+## Nuxt.js Integration Guide
+
+Use a **client-only composable** in Nuxt 3/4. GSAP must run after mount.
+
+### 1. Install dependencies
+
+```bash
+npm install gsap @gsap/vue
+```
+
+> `@gsap/vue` is optional but recommended for automatic cleanup in Vue components.
+
+### 2. Copy assets
+
+```
+your-nuxt-app/
+├── assets/
+│   └── css/
+│       └── section-scroll.css   ← copy from css/style.css
+├── components/
+│   └── SectionByScroll.vue
+└── composables/
+    └── useSectionScroll.ts
+```
+
+Import CSS in `nuxt.config.ts`:
+
+```ts
+export default defineNuxtConfig({
+  css: ["~/assets/css/section-scroll.css"],
+});
+```
+
+### 3. Create the composable
+
+`composables/useSectionScroll.ts`:
+
+```ts
+import { onMounted, onUnmounted, type Ref } from "vue";
+import gsap from "gsap";
+import { Observer } from "gsap/Observer";
+import { CustomEase } from "gsap/CustomEase";
+
+gsap.registerPlugin(Observer, CustomEase);
+
+const EASE_SCROLL = CustomEase.create("sectionScroll", "M0,0 C0.62,0 0.18,1 1,1");
+
+export function useSectionScroll(rootRef: Ref<HTMLElement | null>) {
+  let observer: Observer | null = null;
+  let currentIndex = 0;
+  let isAnimating = false;
+
+  onMounted(() => {
+    if (!rootRef.value) return;
+
+    gsap.config({ force3D: true });
+    gsap.ticker.lagSmoothing(0);
+
+    const track = rootRef.value.querySelector(".scroll-track");
+    const sections = gsap.utils.toArray<HTMLElement>(".section", rootRef.value);
+    if (!track || !sections.length) return;
+
+    const getTrackYPercent = (index: number) => -(index * 100) / sections.length;
+
+    const goToSection = (index: number) => {
+      index = gsap.utils.clamp(0, sections.length - 1, index);
+      if (index === currentIndex || isAnimating) return;
+
+      isAnimating = true;
+      currentIndex = index;
+
+      gsap.to(track, {
+        yPercent: getTrackYPercent(index),
+        duration: 1.15,
+        ease: EASE_SCROLL,
+        force3D: true,
+        onComplete: () => {
+          isAnimating = false;
+        },
+      });
+    };
+
+    observer = Observer.create({
+      target: window,
+      type: "wheel,touch,pointer",
+      tolerance: 10,
+      preventDefault: true,
+      onDown: () => goToSection(currentIndex + 1),
+      onUp: () => goToSection(currentIndex - 1),
+    });
+  });
+
+  onUnmounted(() => {
+    observer?.kill();
+    gsap.killTweensOf(rootRef.value?.querySelectorAll("*") ?? []);
+  });
+}
+```
+
+### 4. Create the component
+
+`components/SectionByScroll.vue`:
+
+```vue
+<script setup lang="ts">
+import { ref } from "vue";
+import { useSectionScroll } from "~/composables/useSectionScroll";
+
+const rootRef = ref<HTMLElement | null>(null);
+useSectionScroll(rootRef);
+</script>
+
+<template>
+  <div ref="rootRef">
+    <main class="scroll-stage">
+      <div class="scroll-pin">
+        <div class="scroll-track">
+          <section class="section section--hero" data-theme="dark">
+            <div class="section-content">
+              <h1 class="title">Your first section</h1>
+            </div>
+          </section>
+          <section class="section section--discover" data-theme="light">
+            <div class="section-content">
+              <h2 class="title">Your second section</h2>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+```
+
+### 5. Use in a page
+
+`pages/index.vue` or `pages/scroll-demo.vue`:
+
+```vue
+<script setup lang="ts">
+useSeoMeta({
+  title: "Section by Scroll Animation | Nuxt + GSAP",
+  description: "Full-page scroll animation on scroll with GSAP Observer in Nuxt.",
+});
+</script>
+
+<template>
+  <SectionByScroll />
+</template>
+```
+
+### Nuxt tips
+
+- Keep GSAP inside `onMounted` or a composable — never run it during SSR.
+- Use `<ClientOnly>` wrapper if you see hydration warnings.
+- For full features (nav dots, content animations, keyboard), port remaining logic from `js/main.js`.
+- Use `useSeoMeta()` for SEO meta tags per page.
 
 ---
 
@@ -174,9 +491,9 @@ Roboto (headings) + Inter (body) are loaded from Google Fonts. Update CSS variab
 
 - `<title>` — primary keyword: *Section by Scroll Animation*
 - `<meta name="description">` — GSAP, open-source, one-scroll-one-section
-- Open Graph (`og:title`, `og:description`) — social sharing
+- Open Graph (`og:title`, `og:description`, `og:url`) — social sharing
 - Twitter Card tags
-- `canonical` link — update with your repo URL before publishing
+- Canonical link → live demo URL
 
 ---
 
@@ -188,6 +505,8 @@ This template helps developers searching for:
 - **section by scroll** — discrete full-page section jumps
 - **full page scroll javascript** — vanilla JS alternative to fullPage.js
 - **GSAP scroll animation tutorial** — working Observer + CustomEase example
+- **GSAP scroll animation Next.js** — React client component integration
+- **GSAP scroll animation Nuxt** — Vue composable integration
 - **scroll snap animation** — event-driven snap without CSS scroll-snap
 - **one scroll one page** — wheel event mapped to section index
 - **open source scroll animation** — MIT licensed, fork-friendly
@@ -201,10 +520,10 @@ Contributions are welcome! Ideas:
 - Horizontal section mode
 - URL hash sync (`#section-2`)
 - Progress bar animation
-- React / Vue / Nuxt port
+- Pre-built Next.js / Nuxt starter templates
 - More easing presets
 
-1. Fork the repo
+1. Fork the [repository](https://github.com/umid-abbasli/Section-by-Scroll-GSAP-Full-Page-Scroll-Animation)
 2. Create a feature branch (`git checkout -b feature/amazing-thing`)
 3. Commit (`git commit -m 'Add amazing thing'`)
 4. Push (`git push origin feature/amazing-thing`)
@@ -222,11 +541,13 @@ MIT License — free for personal and commercial use. See [LICENSE](LICENSE) for
 
 Built with [GSAP](https://gsap.com/) by GreenSock.
 
-If this project helped you, consider giving it a **star** on GitHub — it helps others find this scroll animation template.
+**Author:** [umid-abbasli](https://github.com/umid-abbasli)
+
+If this project helped you, consider giving it a **star** on [GitHub](https://github.com/umid-abbasli/Section-by-Scroll-GSAP-Full-Page-Scroll-Animation) — it helps others find this scroll animation template.
 
 ---
 
 <p align="center">
   <strong>Section by Scroll</strong> — Animation on scroll, done right.<br/>
-  <sub>GSAP · Observer · CustomEase · Vanilla JS · Open Source</sub>
+  <sub>GSAP · Observer · CustomEase · Vanilla JS · Next.js · Nuxt · Open Source</sub>
 </p>
