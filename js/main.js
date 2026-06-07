@@ -241,13 +241,24 @@ function navigate(delta) {
 }
 
 function initObserver() {
+  // Desktop wheel — scroll down = next, scroll up = previous
   Observer.create({
     target: window,
-    type: "wheel,touch,pointer",
+    type: "wheel",
     tolerance: 10,
     preventDefault: true,
     onDown: () => navigate(1),
     onUp: () => navigate(-1),
+  });
+
+  // Mobile touch — swipe up = next section, swipe down = previous (inverted vs wheel)
+  Observer.create({
+    target: window,
+    type: "touch",
+    tolerance: 40,
+    preventDefault: true,
+    onUp: () => navigate(1),
+    onDown: () => navigate(-1),
   });
 }
 
